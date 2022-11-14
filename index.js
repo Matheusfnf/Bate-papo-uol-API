@@ -83,15 +83,30 @@ app.post("/participants", async (req, res) => {
 });
 
 app.get("/messages", async (req, res) => {
-  const { limit } = req.query;
+  const  limit  = Number(req.query.limit);
+  const { user } = req.headers;
 
   try {
-    const message = await db.collection("message").find().toArray();
+    const message = await db
+      .collection("message")
+      .find({
+        $or: [
+          { from: user },
+          { to: { $in: [user, "Todos"] } },
+          { type: "message" },
+        ],
+      })
+      .limit(limit)
+      .toArray();
 
-    if (limit) {
-      const ultimasmsgs = message.slice(message.length - limit);
-      res.send(ultimasmsgs);
-      return;
+    // if (limit) {
+    //   const ultimasmsgs = message.slice(message.length - limit);
+    //   res.send(ultimasmsgs);
+    //   return;
+    // }
+
+    if(messageSchema.length === 0 ){
+      return res.status(404).send("Não foi encontrada nenhuma mensagem!")
     }
     res.send(message);
   } catch (err) {
